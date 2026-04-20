@@ -57,6 +57,8 @@ def render_umap_page() -> None:
 
     with left_col:
         controls = render_umap_controls(feature_columns)
+        st.caption("Resultatet uppdateras först när du klickar på 'Kör UMAP'.")
+        run_clicked = st.button("Kör UMAP", type="primary")
 
     selected_features = controls["selected_features"]
     standardize = controls["standardize"]
@@ -75,38 +77,55 @@ def render_umap_page() -> None:
             render_note_box(str(exc), kind="error")
         return
 
-    results = run_umap_cached(
-        df=df,
-        feature_cols=selected_features,
-        standardize=standardize,
-        n_neighbors=n_neighbors,
-        min_dist=min_dist,
-        metric=metric,
-        n_components=n_components,
-        random_state=random_state,
-        target_series=df[target_column],
-        target_name=target_column,
-    )
-
-    with right_col:
-        st.markdown("## Resultat")
-
-        if n_components == 2:
-            plot_umap_2d(results["embedding_df"], target_col=target_column)
-        else:
-            plot_umap_3d(results["embedding_df"], target_col=target_column)
-
-        st.markdown("### Använda parametrar")
-        params_df = pd.DataFrame(
-            {
-                "Parameter": list(results["params"].keys()),
-                "Värde": [
-                    f"{v:.2f}" if isinstance(v, float) else str(v)
-                    for v in results["params"].values()
-                ],
-            }
+    if run_clicked:
+        results = run_umap_cached(
+            df=df,
+            feature_cols=selected_features,
+            standardize=standardize,
+            n_neighbors=n_neighbors,
+            min_dist=min_dist,
+            metric=metric,
+            n_components=n_components,
+            random_state=random_state,
+            target_series=df[target_column],
+            target_name=target_column,
         )
-        st.dataframe(params_df, width="stretch")
+        st.session_state["umap_results"] = results
 
-    render_umap_interpretation(results["params"])
-    render_reflection_questions("UMAP")
+    stored_results = st.session_state.get("umap_results")
+
+    if stored_results is not None:
+        with right_col:
+            st.markdown("## Resultat")
+
+            if stored_results["params"]["n_components"] == 2:
+                plot_umap_2d(
+                    stored_results["embedding_df"],
+                    target_col=target_column,
+                )
+            else:
+                plot_umap_3d(
+                    stored_results["embedding_df"],
+                    target_col=target_column,
+                )
+
+            st.markdown("### Använda parametrar")
+            params_df = pd.DataFrame(
+                {
+                    "Parameter": list(stored_results["params"].keys()),
+                    "Värde": [
+                        f"{v:.2f}" if isinstance(v, float) else str(v)
+                        for v in stored_results["params"].values()
+                    ],
+                }
+            )
+            st.dataframe(params_df, width="stretch")
+
+        render_umap_interpretation(stored_results["params"])
+        render_reflection_questions("UMAP")
+    else:
+        with right_col:
+            render_note_box(
+                "Välj parametrar och klicka på **Kör UMAP** för att skapa visualiseringen.",
+                kind="info",
+            )
