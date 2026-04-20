@@ -26,7 +26,7 @@ from components.plots import (
 )
 from config import METHOD_DESCRIPTIONS, UMAP_ALLOWED_METRICS, UMAP_DATASET_NAME
 from data.loaders import load_penguins_data
-from methods.umap_analysis import run_umap
+from methods.umap_analysis import run_umap_cached
 from utils.validators import (
     validate_components_against_features,
     validate_metric,
@@ -75,7 +75,7 @@ def render_umap_page() -> None:
             render_note_box(str(exc), kind="error")
         return
 
-    results = run_umap(
+    results = run_umap_cached(
         df=df,
         feature_cols=selected_features,
         standardize=standardize,

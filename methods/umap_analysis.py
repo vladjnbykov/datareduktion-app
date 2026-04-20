@@ -1,11 +1,9 @@
 from __future__ import annotations
-
 from typing import Any
 import warnings
-
 import pandas as pd
+import streamlit as st
 import umap
-
 from utils.preprocessing import build_analysis_matrix
 
 
@@ -154,3 +152,39 @@ def run_umap(
         "params": params,
         "umap_model": umap_model,
     }
+
+@st.cache_data(show_spinner=False)
+def run_umap_cached(
+    df: pd.DataFrame,
+    feature_cols: list[str],
+    standardize: bool = True,
+    n_neighbors: int = 15,
+    min_dist: float = 0.1,
+    metric: str = "euclidean",
+    n_components: int = 2,
+    random_state: int = 42,
+    target_series: pd.Series | None = None,
+    target_name: str = "target",
+) -> dict[str, Any]:
+    """
+    Cached wrapper around run_umap for repeated parameter combinations.
+    """
+    results = run_umap(
+        df=df,
+        feature_cols=feature_cols,
+        standardize=standardize,
+        n_neighbors=n_neighbors,
+        min_dist=min_dist,
+        metric=metric,
+        n_components=n_components,
+        random_state=random_state,
+        target_series=target_series,
+        target_name=target_name,
+    )
+
+    results = results.copy()
+    results.pop("umap_model", None)
+    results.pop("X_processed", None)
+    results.pop("embedding", None)
+
+    return results
