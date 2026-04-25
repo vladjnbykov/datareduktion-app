@@ -23,10 +23,8 @@ from components.plots import (
 )
 from data.loaders import load_penguins_data
 from methods.pca_analysis import run_pca
-from methods.umap_analysis import run_umap
-from utils.validators import (
-    validate_min_selected_features,
-)
+from methods.umap_analysis import run_umap_cached
+from utils.validators import validate_min_selected_features
 
 
 def render_compare_page() -> None:
@@ -68,45 +66,61 @@ i struktur, tolkbarhet och parameterkänslighet.
         render_note_box(str(exc), kind="error")
         return
 
-    pca_results = run_pca(
-        df=df,
-        feature_cols=selected_features,
-        n_components=2,
-        standardize=standardize,
-        target_series=df[target_column],
-        target_name=target_column,
-    )
+    st.caption("Resultatet uppdateras först när du klickar på 'Kör jämförelse'.")
+    run_clicked = st.button("Kör jämförelse", type="primary")
 
-    umap_results = run_umap(
-        df=df,
-        feature_cols=selected_features,
-        standardize=standardize,
-        n_neighbors=n_neighbors,
-        min_dist=min_dist,
-        metric=metric,
-        n_components=2,
-        random_state=random_state,
-        target_series=df[target_column],
-        target_name=target_column,
-    )
-
-    left_col, right_col = st.columns(2)
-
-    with left_col:
-        st.markdown("## PCA")
-        plot_pca_scatter(
-            pca_results["scores_df"],
-            target_col=target_column,
-            pc1_label="PC1",
-            pc2_label="PC2",
+    if run_clicked:
+        pca_results = run_pca(
+            df=df,
+            feature_cols=selected_features,
+            n_components=2,
+            standardize=standardize,
+            target_series=df[target_column],
+            target_name=target_column,
         )
 
-    with right_col:
-        st.markdown("## UMAP")
-        plot_umap_2d(
-            umap_results["embedding_df"],
-            target_col=target_column,
+        umap_results = run_umap_cached(
+            df=df,
+            feature_cols=selected_features,
+            standardize=standardize,
+            n_neighbors=n_neighbors,
+            min_dist=min_dist,
+            metric=metric,
+            n_components=2,
+            random_state=random_state,
+            target_series=df[target_column],
+            target_name=target_column,
         )
 
-    render_compare_summary_box()
-    render_compare_reflection_questions()
+        st.session_state["compare_pca_results"] = pca_results
+        st.session_state["compare_umap_results"] = umap_results
+
+    pca_results = st.session_state.get("compare_pca_results")
+    umap_results = st.session_state.get("compare_umap_results")
+
+    if pca_results is not None and umap_results is not None:
+        left_col, right_col = st.columns(2)
+
+        with left_col:
+            st.markdown("## PCA")
+            plot_pca_scatter(
+                pca_results["scores_df"],
+                target_col=target_column,
+                pc1_label="PC1",
+                pc2_label="PC2",
+            )
+
+        with right_col:
+            st.markdown("## UMAP")
+            plot_umap_2d(
+                umap_results["embedding_df"],
+                target_col=target_column,
+            )
+
+        render_compare_summary_box()
+        render_compare_reflection_questions()
+    else:
+        render_note_box(
+            "Välj parametrar och klicka på **Kör jämförelse** för att skapa PCA- och UMAP-graferna.",
+            kind="info",
+        )
