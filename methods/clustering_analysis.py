@@ -27,6 +27,7 @@ def run_kmeans(
 
     X_processed = matrix_payload["X"]
     pca_model = None
+    pca_scores_df = None
 
     if use_pca:
         from sklearn.decomposition import PCA
@@ -35,7 +36,16 @@ def run_kmeans(
             pca_n_components = 2
 
         pca_model = PCA(n_components=pca_n_components)
-        X_processed = pca_model.fit_transform(X_processed)
+
+        # PCA-transformerad data används nu som input till K-means
+        X_pca = pca_model.fit_transform(X_processed)
+        X_processed = X_pca
+
+        # Spara de två första PCA-komponenterna för visualisering
+        pca_scores_df = pd.DataFrame(
+            X_pca[:, :2],
+            columns=["PC1", "PC2"],
+        )
 
     model = KMeans(
         n_clusters=n_clusters,
@@ -47,6 +57,9 @@ def run_kmeans(
 
     result_df = df.copy()
     result_df["cluster"] = labels.astype(str)
+
+    if pca_scores_df is not None:
+        pca_scores_df["cluster"] = labels.astype(str)
 
     sil_score = None
     if n_clusters > 1 and n_clusters < len(X_processed):
@@ -63,6 +76,7 @@ def run_kmeans(
         "used_pca": use_pca,
         "pca_n_components": pca_n_components,
         "pca_model": pca_model,
+        "pca_scores_df": pca_scores_df,
     }
 
 
