@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-APP_TITLE = "Datareduktion Playground"
+APP_TITLE = "Datareduktion & Klustring Playground"
 APP_ICON = "📊"
 APP_LAYOUT = "wide"
 

@@ -8,6 +8,7 @@ from app_pages.compare_page import render_compare_page
 from app_pages.home_page import render_home_page
 from app_pages.pca_page import render_pca_page
 from app_pages.umap_page import render_umap_page
+from app_pages.clustering_page import render_clustering_page
 
 
 def main() -> None:
@@ -23,16 +24,33 @@ def main() -> None:
     with st.sidebar:
         st.title(APP_TITLE)
 
-        page = st.radio(
-            "Navigera",
-            options=[
-                "Hem",
-                "PCA",
-                "UMAP",
-                "Korrespondensanalys",
-                "Jämför metoder",
-            ],
-        )
+        if "active_page" not in st.session_state:
+            st.session_state["active_page"] = "Hem"
+
+        with st.expander("📊 Datareduktion", expanded=True):
+            if st.button("Hem", width="stretch"):
+                st.session_state["active_page"] = "Hem"
+
+            if st.button("PCA", width="stretch"):
+                st.session_state["active_page"] = "PCA"
+
+            if st.button("UMAP", width="stretch"):
+                st.session_state["active_page"] = "UMAP"
+
+            if st.button("Korrespondensanalys", width="stretch"):
+                st.session_state["active_page"] = "Korrespondensanalys"
+
+            if st.button("Jämför metoder", width="stretch"):
+                st.session_state["active_page"] = "Jämför metoder"
+
+        with st.expander("🧠 Klustring", expanded=True):
+            if st.button("K-means", width="stretch"):
+                st.session_state["active_page"] = "K-means"
+
+        page = st.session_state["active_page"]
+
+        st.markdown("---")
+        st.caption(f"Aktiv sida: **{page}**")
 
     if page == "Hem":
         render_home_page()
@@ -44,6 +62,8 @@ def main() -> None:
         render_ca_page()
     elif page == "Jämför metoder":
         render_compare_page()
+    elif page == "K-means":
+        render_clustering_page()
 
 
 if __name__ == "__main__":

@@ -222,3 +222,57 @@ def plot_inertia_bar(explained_inertia: Sequence[float]) -> None:
         labels={"x": "Dimension", "y": "Inertia (%)"},
     )
     st.plotly_chart(fig, width="stretch")
+
+def plot_elbow_curve(elbow_df: pd.DataFrame) -> None:
+    fig = px.line(
+        elbow_df,
+        x="k",
+        y="inertia",
+        markers=True,
+        title="Elbow method: inertia för olika k",
+        labels={"k": "Antal kluster (k)", "inertia": "Inertia"},
+    )
+    st.plotly_chart(fig, width="stretch")
+
+
+def plot_silhouette_scores(elbow_df: pd.DataFrame) -> None:
+    fig = px.line(
+        elbow_df,
+        x="k",
+        y="silhouette_score",
+        markers=True,
+        title="Silhouette score för olika k",
+        labels={"k": "Antal kluster (k)", "silhouette_score": "Silhouette score"},
+    )
+    st.plotly_chart(fig, width="stretch")
+
+
+def plot_kmeans_pca_scatter(scores_df: pd.DataFrame) -> None:
+    fig = px.scatter(
+        scores_df,
+        x="PC1",
+        y="PC2",
+        color="cluster",
+        title="K-means-kluster visualiserade med PCA",
+        labels={"cluster": "Kluster"},
+    )
+    st.plotly_chart(fig, width="stretch")
+
+
+def plot_cluster_sizes(result_df: pd.DataFrame) -> None:
+    cluster_counts = (
+        result_df["cluster"]
+        .value_counts()
+        .sort_index()
+        .rename_axis("cluster")
+        .reset_index(name="count")
+    )
+
+    fig = px.bar(
+        cluster_counts,
+        x="cluster",
+        y="count",
+        title="Antal observationer per kluster",
+        labels={"cluster": "Kluster", "count": "Antal"},
+    )
+    st.plotly_chart(fig, width="stretch")    

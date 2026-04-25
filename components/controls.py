@@ -220,3 +220,65 @@ def render_compare_controls(feature_cols: list[str]) -> dict[str, object]:
         "metric": metric,
         "random_state": int(random_state),
     }
+def render_clustering_controls(feature_cols: list[str]) -> dict[str, object]:
+    """
+    Render controls for K-means clustering page.
+    """
+    st.markdown("## Inställningar")
+
+    selected_features = st.multiselect(
+        "Välj features",
+        options=feature_cols,
+        default=feature_cols,
+    )
+
+    standardize = st.checkbox(
+        "Standardisera data",
+        value=True,
+    )
+
+    n_clusters = st.slider(
+        "Antal kluster (k)",
+        min_value=2,
+        max_value=10,
+        value=3,
+    )
+
+    random_state = st.number_input(
+        "random_state",
+        min_value=0,
+        value=42,
+        step=1,
+    )
+
+    show_pca_visualization = st.checkbox(
+        "Visa kluster i PCA-rum",
+        value=True,
+    )
+
+    clustering_space = st.radio(
+        "Var ska K-means köras?",
+        options=[
+            "Originalvariabler",
+            "PCA-komponenter",
+        ],
+    )
+
+    pca_n_components = None
+    if clustering_space == "PCA-komponenter":
+        pca_n_components = st.slider(
+            "Antal PCA-komponenter före K-means",
+            min_value=2,
+            max_value=len(feature_cols),
+            value=2,
+        )
+
+    return {
+        "selected_features": selected_features,
+        "standardize": standardize,
+        "n_clusters": int(n_clusters),
+        "random_state": int(random_state),
+        "show_pca_visualization": show_pca_visualization,
+        "clustering_space": clustering_space,
+        "pca_n_components": pca_n_components,
+    }
