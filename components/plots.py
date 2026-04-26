@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-
+from scipy.cluster.hierarchy import dendrogram
 
 def plot_pca_scatter(
     scores_df: pd.DataFrame,
@@ -276,3 +276,54 @@ def plot_cluster_sizes(result_df: pd.DataFrame) -> None:
         labels={"cluster": "Kluster", "count": "Antal"},
     )
     st.plotly_chart(fig, width="stretch")    
+
+def plot_dendrogram(linkage_matrix, cut_height: float | None = None, max_samples: int = 100):
+    """
+    Plot dendrogram for hierarchical clustering.
+
+    cut_height visar var dendrogrammet klipps.
+    max_samples begränsar hur många sista grupper som visas.
+    """
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    dendrogram(
+        linkage_matrix,
+        truncate_mode="lastp",
+        p=max_samples,
+        leaf_rotation=90,
+        leaf_font_size=8,
+        ax=ax,
+    )
+
+    if cut_height is not None:
+        ax.axhline(
+            y=cut_height,
+            linestyle="--",
+            linewidth=2,
+            label="Klipplinje",
+        )
+        ax.legend()
+
+    ax.set_title("Dendrogram (hierarkisk klustring)")
+    ax.set_xlabel("Observationer / grupper")
+    ax.set_ylabel("Avstånd")
+
+    st.pyplot(fig)
+
+    st.caption(
+        "Siffrorna i parentes på x-axeln visar hur många observationer som ingår i varje grupp "
+        "vid denna nivå i dendrogrammet. Klipplinjen visar var trädet delas för att skapa valda grupper."
+    )
+
+    st.caption(
+        """
+    Tal utan parentes är enskilda datapunkter (radindex).
+    Tal i parentes visar grupper av datapunkter som redan slagits ihop.
+    """
+    )
+    st.caption(
+        """
+    Dendrogrammet visar en förenklad version av trädet.
+    Vissa “löv” representerar grupper av flera datapunkter (visas som (n)).
+    """
+    )

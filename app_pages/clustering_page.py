@@ -14,6 +14,7 @@ from components.plots import (
     plot_elbow_curve,
     plot_kmeans_pca_scatter,
     plot_silhouette_scores,
+    plot_umap_2d,
 )
 from data.loaders import load_penguins_data, load_wine_data
 from methods.clustering_analysis import (
@@ -98,14 +99,28 @@ Det innebär att klustren inte nödvändigtvis motsvarar verkliga arter.
 
         clustering_space = controls["clustering_space"]
         pca_n_components = controls["pca_n_components"]
+        umap_n_neighbors = controls["umap_n_neighbors"]
+        umap_min_dist = controls["umap_min_dist"]
+        umap_metric = controls["umap_metric"]
 
         if clustering_space == "Originalvariabler":
+            embedding_method = "original"
+        elif clustering_space == "PCA-komponenter":
+            embedding_method = "pca"
+        else:
+            embedding_method = "umap"
+
+        if embedding_method == "original":
             st.caption(
                 "K-means körs direkt på de valda variablerna. PCA används endast för visualisering."
             )
-        else:
+        elif embedding_method == "pca":
             st.caption(
                 "K-means körs efter att datan först reducerats med PCA."
+            )
+        else:
+            st.caption(
+                "K-means körs efter att datan först reducerats med UMAP. Detta är explorativt och ska tolkas försiktigt."
             )
 
         st.caption("K-means körs först när du klickar på knappen.")
@@ -133,8 +148,11 @@ Det innebär att klustren inte nödvändigtvis motsvarar verkliga arter.
             n_clusters=n_clusters,
             standardize=standardize,
             random_state=random_state,
-            use_pca=(clustering_space == "PCA-komponenter"),
+            embedding_method=embedding_method,
             pca_n_components=pca_n_components,
+            umap_n_neighbors=umap_n_neighbors,
+            umap_min_dist=umap_min_dist,
+            umap_metric=umap_metric,
         )
 
         elbow_df = compute_elbow_and_silhouette(
@@ -143,8 +161,11 @@ Det innebär att klustren inte nödvändigtvis motsvarar verkliga arter.
             k_values=list(range(2, 11)),
             standardize=standardize,
             random_state=random_state,
-            use_pca=(clustering_space == "PCA-komponenter"),
+            embedding_method=embedding_method,
             pca_n_components=pca_n_components,
+            umap_n_neighbors=umap_n_neighbors,
+            umap_min_dist=umap_min_dist,
+            umap_metric=umap_metric,
         )
         st.session_state["kmeans_dataset_choice"] = dataset_choice
         st.session_state["kmeans_df"] = df
@@ -182,8 +203,15 @@ Det innebär att klustren inte nödvändigtvis motsvarar verkliga arter.
         plot_silhouette_scores(elbow_df)
 
         if st.session_state.get("kmeans_show_pca", True):
-            if kmeans_results.get("used_pca") and kmeans_results.get("pca_scores_df") is not None:
+            if kmeans_results.get("used_umap") and kmeans_results.get("umap_scores_df") is not None:
+                umap_scores_df = kmeans_results["umap_scores_df"]
+                
+                plot_umap_2d(umap_scores_df, target_col="cluster")
+
+            elif kmeans_results.get("used_pca") and kmeans_results.get("pca_scores_df") is not None:
                 pca_scores_df = kmeans_results["pca_scores_df"]
+                plot_kmeans_pca_scatter(pca_scores_df)
+
             else:
                 pca_scores_df = run_pca_for_kmeans_visualization(
                     df=st.session_state["kmeans_df"],
@@ -191,11 +219,20 @@ Det innebär att klustren inte nödvändigtvis motsvarar verkliga arter.
                     cluster_labels=kmeans_results["labels"],
                     standardize=st.session_state["kmeans_standardize"],
                 )
-
-            plot_kmeans_pca_scatter(pca_scores_df)
-
+                plot_kmeans_pca_scatter(pca_scores_df)
     st.markdown("## Tolkning")
-    if kmeans_results["used_pca"]:
+    
+    if kmeans_results["used_umap"]:
+        st.info(
+            """
+    - **Elbow method** används för att se när inertia slutar minska kraftigt.
+    - **Silhouette score** visar hur väl observationer passar i sina kluster.
+    - Här kördes **K-means på UMAP-komponenter**, alltså efter icke-linjär dimensionsreduktion.
+    - Detta kan ge tydliga visuella grupper, men bör tolkas försiktigt eftersom UMAP främst är ett visualiseringsverktyg.
+            """
+        ) 
+    
+    elif kmeans_results["used_pca"]:
         st.info(
             """
     - **Elbow method** används för att se när inertia slutar minska kraftigt.
@@ -204,6 +241,7 @@ Det innebär att klustren inte nödvändigtvis motsvarar verkliga arter.
     - PCA-plotten visar samma typ av reducerat rum som användes före klustringen.
             """
         )
+
     else:
         st.info(
             """
@@ -219,7 +257,7 @@ Det innebär att klustren inte nödvändigtvis motsvarar verkliga arter.
         """
 1. Vilket k verkar rimligt enligt elbow plot?
 2. Vilket k ger högst silhouette score?
-3. Ser klustren tydliga ut i PCA-plotten?
+3. Ser klustren tydliga ut i visualiseringen?
 4. Stämmer klustren ungefär med pingvinarter, eller hittar K-means något annat?
         """
     )

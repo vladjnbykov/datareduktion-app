@@ -261,10 +261,17 @@ def render_clustering_controls(feature_cols: list[str]) -> dict[str, object]:
         options=[
             "Originalvariabler",
             "PCA-komponenter",
+            "UMAP-komponenter",
         ],
     )
 
+
+
     pca_n_components = None
+    umap_n_neighbors = None
+    umap_min_dist = None
+    umap_metric = None
+
     if clustering_space == "PCA-komponenter":
         pca_n_components = st.slider(
             "Antal PCA-komponenter före K-means",
@@ -273,6 +280,27 @@ def render_clustering_controls(feature_cols: list[str]) -> dict[str, object]:
             value=2,
         )
 
+    elif clustering_space == "UMAP-komponenter":
+        umap_n_neighbors = st.slider(
+            "UMAP n_neighbors",
+            min_value=2,
+            max_value=50,
+            value=15,
+        )
+
+        umap_min_dist = st.slider(
+            "UMAP min_dist",
+            min_value=0.0,
+            max_value=0.99,
+            value=0.1,
+            step=0.01,
+        )
+
+        umap_metric = st.selectbox(
+            "UMAP metric",
+            options=["euclidean", "manhattan", "cosine"],
+            index=0,
+        )
     return {
         "selected_features": selected_features,
         "standardize": standardize,
@@ -281,4 +309,41 @@ def render_clustering_controls(feature_cols: list[str]) -> dict[str, object]:
         "show_pca_visualization": show_pca_visualization,
         "clustering_space": clustering_space,
         "pca_n_components": pca_n_components,
+        "umap_n_neighbors": umap_n_neighbors,
+        "umap_min_dist": umap_min_dist,
+        "umap_metric": umap_metric,
+    }
+
+def render_hierarchical_controls(feature_cols: list[str]) -> dict[str, object]:
+    st.markdown("## Inställningar")
+
+    selected_features = st.multiselect(
+        "Välj features",
+        options=feature_cols,
+        default=feature_cols,
+    )
+
+    standardize = st.checkbox(
+        "Standardisera data",
+        value=True,
+    )
+
+    n_clusters = st.slider(
+        "Klipp dendrogrammet till antal grupper",
+        min_value=2,
+        max_value=10,
+        value=3,
+    )
+
+    linkage_method = st.selectbox(
+        "Linkage method",
+        options=["ward", "complete", "average", "single"],
+        index=0,
+    )
+
+    return {
+        "selected_features": selected_features,
+        "standardize": standardize,
+        "n_clusters": n_clusters,
+        "linkage_method": linkage_method,
     }

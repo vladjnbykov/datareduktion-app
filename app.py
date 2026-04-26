@@ -9,6 +9,7 @@ from app_pages.home_page import render_home_page
 from app_pages.pca_page import render_pca_page
 from app_pages.umap_page import render_umap_page
 from app_pages.clustering_page import render_clustering_page
+from app_pages.hierarchical_page import render_hierarchical_page
 
 
 def main() -> None:
@@ -42,10 +43,12 @@ def main() -> None:
 
             if st.button("Jämför metoder", width="stretch"):
                 st.session_state["active_page"] = "Jämför metoder"
-
+             
         with st.expander("🧠 Klustring", expanded=True):
             if st.button("K-means", width="stretch"):
                 st.session_state["active_page"] = "K-means"
+            if st.button("Hierarkisk klustring", width="stretch"):
+                st.session_state["active_page"] = "Hierarkisk klustring"      
 
         page = st.session_state["active_page"]
 
@@ -64,6 +67,8 @@ def main() -> None:
         render_compare_page()
     elif page == "K-means":
         render_clustering_page()
+    elif page == "Hierarkisk klustring":
+        render_hierarchical_page()
 
 
 if __name__ == "__main__":
